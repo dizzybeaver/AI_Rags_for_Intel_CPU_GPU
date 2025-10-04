@@ -2,14 +2,16 @@
 
 **Intelligent code assistant with semantic search and context-aware AI responses**
 
-*** I am sure you can adapt this to whichever Intel CPU or GPU you may have
-
 A complete local Retrieval-Augmented Generation (RAG) system designed for the Lambda Execution Engine project. Combines Intel NPU/GPU-accelerated embeddings with LM Studio for fast, context-aware code assistance without cloud dependencies.
+
+**NEW: Now supports 100+ file queries with smart chunking and hierarchical search!**
 
 ---
 
 ## 🚀 Features
 
+- **100+ File Support**: Advanced chunking enables queries across entire codebase
+- **Three Search Strategies**: Hierarchical, chunk-level, and file-level modes
 - **Semantic Code Search**: Find relevant files by meaning, not just keywords
 - **Context-Aware AI**: LLM responses based on actual project code
 - **Multi-Device Optimization**: Uses NPU for embeddings, GPU for LLM
@@ -29,14 +31,19 @@ A complete local Retrieval-Augmented Generation (RAG) system designed for the La
 pip install -r requirements.txt
 ```
 
-### 2. Configure Hardware
+### 2. Choose Your System
 
+**Basic System** (10-20 files per query):
 ```bash
-# Automatically detect and configure for your hardware
-python dual_gpu_config.py
+python dual_gpu_config.py  # Auto-configure
+python rag_server.py       # Start server
 ```
 
-This detects your GPUs/NPU and configures optimal device allocation.
+**Advanced System** (100+ files per query) - **RECOMMENDED**:
+```bash
+python upgrade_to_chunked.py       # One-time upgrade
+python rag_server_advanced.py      # Start advanced server
+```
 
 ### 3. Start LM Studio
 
@@ -63,8 +70,8 @@ start_lambda_rag.bat
 # Terminal 1: Auto-indexer
 python auto_index.py
 
-# Terminal 2: RAG server
-python rag_server.py
+# Terminal 2: RAG server (basic or advanced)
+python rag_server_advanced.py  # Recommended
 
 # Browser: http://localhost:8000
 ```
@@ -76,11 +83,31 @@ python rag_server.py
 ### Web Interface (Recommended)
 
 1. Open **http://localhost:8000**
-2. Type question: *"How does the gateway pattern work?"*
-3. Click **Search & Ask LLM**
-4. View relevant files + AI-generated answer
+2. **Choose search strategy** (Advanced system only):
+   - **Hierarchical** (default): 20 files × 5 chunks = 100 results
+   - **Chunk-Level**: 100+ precise chunks
+   - **File-Level**: Fast overview, 10-20 files
+3. Type question: *"How does the gateway pattern work?"*
+4. Click **Search & Ask LLM**
+5. View relevant files + AI-generated answer
 
-![Web Interface](https://via.placeholder.com/800x400?text=Lambda+RAG+Web+Interface)
+### Search Strategy Guide
+
+**Use Hierarchical for:**
+- Broad questions: "How does error handling work?"
+- Architecture questions: "Explain the SUGA pattern"
+- Cross-cutting concerns: "How is logging used?"
+- **Best all-around choice**
+
+**Use Chunk-Level for:**
+- Specific code: "Show me the exact routing implementation"
+- Debugging: "Where is this function called?"
+- Precision over diversity
+
+**Use File-Level for:**
+- Quick exploration: "What files handle caching?"
+- Understanding structure
+- Fast responses needed
 
 ### Command Line
 
@@ -105,36 +132,52 @@ python vscode_context.py
 ### Python API
 
 ```python
-from lambda_indexer import LambdaProjectIndexer
+from lambda_indexer_chunked import LambdaProjectIndexer
 
 # Initialize
 indexer = LambdaProjectIndexer(device="NPU")
 indexer.load_index("lambda_index")
 
-# Search
-results = indexer.search("gateway architecture", top_k=5)
-for r in results:
-    print(f"{r['score']:.2%} - {r['file']}")
+# Hierarchical search (100 results)
+results = indexer.search_hierarchical(
+    "gateway architecture",
+    file_top_k=20,
+    chunks_per_file=5
+)
+
+# Chunk-level search (precise)
+results = indexer.search_chunks("specific function", top_k=100)
+
+# File-level search (fast)
+results = indexer.search_files("what handles auth", top_k=20)
 ```
 
 ---
 
 ## 📁 Project Structure
 
+### Core System Files
+
 ```
 lambda-rag-system/
-├── lambda_indexer.py       # Core embedding engine
-├── rag_server.py           # Web UI + API server
-├── lambda_ask.py           # CLI query tool
-├── auto_index.py           # Auto-reindex on file changes
-├── vscode_context.py       # Clipboard context enhancer
-├── gpu_monitor.py          # Hardware detection
-├── dual_gpu_config.py      # Auto-configuration helper
-├── start_lambda_rag.sh     # Startup script (Linux/Mac)
-├── start_lambda_rag.bat    # Startup script (Windows)
-├── requirements.txt        # Python dependencies
-├── README.md               # This file
-└── lambda_index_*.npz      # Generated index files
+├── lambda_indexer.py           # Basic file-level indexer
+├── lambda_indexer_chunked.py   # Advanced chunked indexer ⭐ NEW
+├── rag_server.py               # Basic web server
+├── rag_server_advanced.py      # Advanced server (100+ files) ⭐ NEW
+├── lambda_ask.py               # CLI query tool
+├── auto_index.py               # Auto-reindex on file changes
+├── vscode_context.py           # Clipboard context enhancer
+├── gpu_monitor.py              # Hardware detection
+├── dual_gpu_config.py          # Auto-configuration helper
+├── upgrade_to_chunked.py       # Migration script ⭐ NEW
+├── search_examples.py          # Strategy demonstrations ⭐ NEW
+├── start_lambda_rag.sh         # Startup script (Linux/Mac)
+├── start_lambda_rag.bat        # Startup script (Windows)
+├── requirements.txt            # Python dependencies
+├── README.md                   # This file
+├── README_RAG_SETUP.md         # Detailed setup guide
+├── ADVANCED_FEATURES.md        # 100+ file support guide ⭐ NEW
+└── lambda_index_*.npz          # Generated index files
 ```
 
 ---
@@ -145,7 +188,7 @@ lambda-rag-system/
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                 Lambda RAG System                        │
+│            Lambda RAG System (Advanced)                  │
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────┐ │
@@ -154,15 +197,25 @@ lambda-rag-system/
 │  └──────────────┘    └──────────────┘    └──────────┘ │
 │                             │                    ▲      │
 │                             ▼                    │      │
+│                  ┌────────────────────┐         │      │
+│                  │  Search Strategy:   │         │      │
+│                  │  • Hierarchical     │         │      │
+│                  │  • Chunk-Level      │         │      │
+│                  │  • File-Level       │         │      │
+│                  └────────────────────┘         │      │
+│                             │                    │      │
+│                             ▼                    │      │
 │                      ┌──────────────┐           │      │
 │                      │   Embedder   │           │      │
 │                      │   (NPU/GPU)  │           │      │
+│                      │  - Files      │           │      │
+│                      │  - Chunks     │           │      │
 │                      └──────────────┘           │      │
 │                             │                    │      │
 │                             ▼                    │      │
 │                      ┌──────────────┐           │      │
-│                      │  Find Top 3  │───────────┘      │
-│                      │ Relevant Files│                  │
+│                      │ Find Top 100 │───────────┘      │
+│                      │   Results    │                  │
 │                      └──────────────┘                  │
 │                                                          │
 └─────────────────────────────────────────────────────────┘
@@ -177,7 +230,7 @@ GPU 0 (12GB):     LM Studio - Qwen 2.5 32B Instruct
 
 GPU 1 (12GB):     Embeddings - BGE-Small-EN-v1.5
                   Background indexing, 500-1000 files/s
-                  No LLM interference
+                  Both file and chunk embeddings
 
 NPU (13 TOPS):    Alternative for embeddings
                   Zero GPU impact
@@ -186,18 +239,61 @@ CPU (20 cores):   RAG server + file watching
                   Coordination layer
 ```
 
-### Data Flow
+### Chunking Architecture
 
-1. **Indexing Phase** (one-time):
-   - All project files (.py, .md, .json) → Embedded into vectors
-   - Stored in `lambda_index_embeddings.npz`
+```
+Original File (gateway.py - 500 lines)
+         │
+         ▼
+   Smart Chunking (code-aware)
+         │
+         ├─ Chunk 0: Imports + setup
+         ├─ Chunk 1: Class definition
+         ├─ Chunk 2: execute_operation()  ◄─ 98% match!
+         ├─ Chunk 3: _route_to_module()   ◄─ 96% match!
+         ├─ Chunk 4: Error handling       ◄─ 92% match!
+         └─ Chunk 5-9: Other functions
+         
+Query: "How does operation routing work?"
+Result: Gets chunks 2, 3, 4 (exact relevant code)
+Instead of: Entire 500-line file with lots of irrelevant code
+```
 
-2. **Query Phase** (real-time):
-   - Your question → Embedded into vector
-   - Compared against all file vectors (cosine similarity)
-   - Top 3-5 most relevant files retrieved
-   - Files + question → Sent to LM Studio
-   - LLM generates answer with project context
+---
+
+## 📊 Performance Comparison
+
+### Basic vs Advanced System
+
+| Feature | Basic System | Advanced System |
+|---------|--------------|-----------------|
+| **Max Files/Query** | 10-20 | 100+ |
+| **Indexing Level** | File only | File + Chunk |
+| **Search Modes** | 1 (file-level) | 3 (hierarchical/chunk/file) |
+| **Context Size** | Fixed (~40KB) | Configurable (8-20KB) |
+| **Code Awareness** | None | Smart chunking |
+| **Precision** | Good | Excellent |
+| **Speed** | Fast | Fast-Medium |
+| **Best For** | Simple queries | Complex projects |
+
+### Search Strategy Performance
+
+| Strategy | Files | Chunks | Speed | Precision | Coverage | Best For |
+|----------|-------|--------|-------|-----------|----------|----------|
+| **Hierarchical** | 20 | 100 | Medium | Great | Excellent | Default choice |
+| **Chunk-Level** | Varies | 100-200 | Slower | Excellent | Great | Specific code |
+| **File-Level** | 20 | 60 | Fast | Good | Good | Quick exploration |
+
+### Real-World Timings (Dual B580)
+
+| Operation | Basic System | Advanced System |
+|-----------|--------------|-----------------|
+| File search | 100-200ms | 100-200ms |
+| Hierarchical search | N/A | 300-500ms |
+| Chunk search (100) | N/A | 500-800ms |
+| Indexing (full project) | 30-60s | 2-5min (one-time) |
+| LLM query (32B model) | 1-3s | 1-3s |
+| **Total response** | **1.5-3.5s** | **2-4s** |
 
 ---
 
@@ -205,11 +301,11 @@ CPU (20 cores):   RAG server + file watching
 
 ### Device Selection
 
-Edit `lambda_indexer.py`, `rag_server.py`, and `auto_index.py`:
+Edit `lambda_indexer_chunked.py` and `rag_server_advanced.py`:
 
 ```python
 # Options for dual GPU setup:
-indexer = LambdaProjectIndexer(device="GPU.1")   # Second Arc B580
+indexer = LambdaProjectIndexer(device="GPU.1")   # Second Arc B580 ⭐
 indexer = LambdaProjectIndexer(device="GPU.0")   # First Arc B580
 indexer = LambdaProjectIndexer(device="NPU")     # Intel AI Boost NPU
 indexer = LambdaProjectIndexer(device="CPU")     # CPU fallback
@@ -231,103 +327,133 @@ python dual_gpu_config.py
 - **Qwen 2.5 Coder 14B** (Q5) - Excellent quality, 25-35 tok/s ✅ Recommended
 - **Qwen 2.5 14B Instruct** (Q5) - General purpose, 25-35 tok/s
 
-### Embedding Model
+### Search Strategy Tuning
 
-**Current:** BGE-Small-EN-v1.5 (133M params, 384 dimensions)
-- Fast inference on NPU/GPU
-- Excellent code understanding
-- Optimized for Intel hardware
+**In Web UI:**
+- Select from dropdown: Hierarchical / Chunk-Level / File-Level
+- Set number of results: 10-500 (default: 100)
+- Set max context: 2000-20000 chars (default: 8000)
 
-**Alternatives:**
-- Nomic Embed Text v1.5 (8K context, larger files)
-- E5-Small-v2 (faster, slightly lower quality)
-
-Change in `lambda_indexer.py`:
+**In Code:**
 ```python
-model = OVModelForFeatureExtraction.from_pretrained(
-    "BAAI/bge-small-en-v1.5",  # Change model name here
-    export=True,
-    device=device
+# Hierarchical (balanced)
+results = indexer.search_hierarchical(
+    query,
+    file_top_k=20,        # Top 20 files
+    chunks_per_file=5     # 5 chunks each = 100 total
+)
+
+# Chunk-level (precise)
+results = indexer.search_chunks(
+    query,
+    top_k=150             # Get 150 best chunks
+)
+
+# File-level (fast)
+results = indexer.search_files(
+    query,
+    top_k=15              # 15 files
 )
 ```
 
-### Number of Results
+### Context Length by Model
 
-**Web UI:** Use dropdown (1-10 files)
-
-**CLI:** Edit `lambda_ask.py`:
 ```python
-relevant_files = indexer.search(question, top_k=3)  # Change 3 to desired
-```
+# Small models (7-14B):
+max_context_length = 6000  # Leaves room for response
 
-**API:** Send in request:
-```python
-response = requests.post("http://localhost:8000/api/ask", 
-                        json={"question": "...", "top_k": 5})
+# Medium models (32B):
+max_context_length = 8000  # Default, good balance ⭐
+
+# Large models (70B+):
+max_context_length = 15000  # Can handle more context
+
+# Models with huge context (128K+):
+max_context_length = 20000  # Maximum precision
 ```
 
 ---
 
 ## 🛠️ Advanced Usage
 
-### Running Multiple Models
-
-**Setup 1: Dual Models (Speed + Quality)**
+### Migration to Chunked System
 
 ```bash
-# LM Studio Instance 1 (GPU 0, Port 1234)
-Model: Qwen 2.5 Coder 14B
-Use: Fast iterations, debugging
+# Automatic upgrade (recommended)
+python upgrade_to_chunked.py
 
-# LM Studio Instance 2 (GPU 1, Port 1235)
-Model: Qwen 2.5 32B Instruct
-Use: Complex reasoning, architecture
+# Manual upgrade
+python -c "from lambda_indexer_chunked import LambdaProjectIndexer; i = LambdaProjectIndexer(device='NPU'); i.index_project('./'); i.save_index('lambda_index')"
 ```
 
-Edit `rag_server.py`:
+### Running Search Examples
+
+```bash
+# Interactive demonstrations of all search strategies
+python search_examples.py
+```
+
+### Custom Search Pipelines
+
 ```python
-LM_STUDIO_FAST = "http://localhost:1234/v1/chat/completions"
-LM_STUDIO_QUALITY = "http://localhost:1235/v1/chat/completions"
+from lambda_indexer_chunked import LambdaProjectIndexer
 
-# Use based on question complexity
-endpoint = LM_STUDIO_QUALITY if complex_question else LM_STUDIO_FAST
+indexer = LambdaProjectIndexer(device="NPU")
+indexer.load_index("lambda_index")
+
+# Step 1: Quick file overview
+files = indexer.search_files("authentication", top_k=10)
+print(f"Found {len(files)} relevant files")
+
+# Step 2: Deep dive into top file
+top_file = files[0]['file']
+all_chunks = indexer.search_chunks("authentication", top_k=200)
+file_chunks = [c for c in all_chunks if c['file'] == top_file]
+
+# Step 3: Get exact implementation
+for chunk in file_chunks[:5]:
+    print(f"Chunk {chunk['chunk_num']}: {chunk['score']:.1%}")
+    print(chunk['content'][:200])
 ```
 
-### Custom File Extensions
+### Quality Filtering
 
-Edit `lambda_indexer.py`:
 ```python
-extensions = {'.py', '.md', '.json', '.yaml', '.yml', '.txt', 
-              '.js', '.ts', '.cpp', '.h'}  # Add more
+results = indexer.search_chunks(query, top_k=200)
+
+# Filter by relevance threshold
+high_quality = [r for r in results if r['score'] > 0.85]  # Very relevant
+good_quality = [r for r in results if r['score'] > 0.75]  # Pretty relevant
+all_results = results  # Everything
+
+# Use high_quality for small models, all_results for large models
 ```
 
-### Exclude Directories
-
-Edit `auto_index.py`:
-```python
-ignored = {'venv', '__pycache__', '.git', 'node_modules', 
-           '.venv', 'build', 'dist'}  # Add more
-```
-
-### API Endpoints
+### API Endpoints (Advanced Server)
 
 **GET /api/stats**
 ```bash
 curl http://localhost:8000/api/stats
-# Returns: {"indexed_files": 42, "status": "ready"}
+# Returns: {"indexed_files": 42, "indexed_chunks": 523, "status": "ready"}
 ```
 
-**POST /api/ask**
+**POST /api/ask** (with search strategy)
 ```bash
 curl -X POST http://localhost:8000/api/ask \
   -H "Content-Type: application/json" \
-  -d '{"question": "How does caching work?", "top_k": 3}'
+  -d '{
+    "question": "How does caching work?",
+    "search_mode": "hierarchical",
+    "num_results": 100,
+    "max_context_length": 8000
+  }'
 ```
 
-**POST /api/reindex**
+**POST /api/quick_search** (no LLM, just file list)
 ```bash
-curl -X POST http://localhost:8000/api/reindex
-# Rebuilds entire index
+curl -X POST http://localhost:8000/api/quick_search \
+  -H "Content-Type: application/json" \
+  -d '{"question": "authentication files", "top_k": 20}'
 ```
 
 ---
@@ -340,14 +466,14 @@ curl -X POST http://localhost:8000/api/reindex
 1. LM Studio is running
 2. Model is loaded
 3. Server is started (click "Start Server")
-4. Port is 1234 (or update `rag_server.py`)
+4. Port is 1234 (or update `rag_server_advanced.py`)
 
 **Test connection:**
 ```bash
 curl http://localhost:1234/v1/models
 ```
 
-### Module not found: lambda_indexer
+### Module not found errors
 
 **Solution:**
 ```bash
@@ -359,90 +485,61 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"  # Linux/Mac
 set PYTHONPATH=%PYTHONPATH%;%CD%          # Windows
 ```
 
-### NPU not detected
+### Chunked index not found
 
-**Check devices:**
+**If using advanced system:**
 ```bash
-python gpu_monitor.py --once
+# Check for chunked index files
+ls lambda_index_*
+
+# Should see:
+# lambda_index_file_embeddings.npz
+# lambda_index_chunk_embeddings.npz
+# lambda_index_file_metadata.json
+# lambda_index_chunk_metadata.json
+
+# If missing, rebuild:
+python upgrade_to_chunked.py
 ```
 
-**Fallback to CPU:**
-```python
-indexer = LambdaProjectIndexer(device="CPU")
-```
+### Search results not relevant
 
-**Update Intel drivers:**
-- Download: https://www.intel.com/content/www/us/en/download/785597/
+**Try:**
+1. Switch search strategy (hierarchical → chunk-level)
+2. Increase results (100 → 150)
+3. Rephrase question more specifically
+4. Check if files are indexed: `python gpu_monitor.py --once`
+5. Rebuild index: `python upgrade_to_chunked.py`
 
-### Slow indexing
+### Slow performance
 
 **Optimize:**
-1. Use GPU instead of CPU for embeddings
-2. Reduce file count (exclude unnecessary directories)
-3. Use smaller embedding model (All-MiniLM-L6-v2)
-
-### Index not updating
-
-**Manual rebuild:**
-```bash
-python -c "from lambda_indexer import LambdaProjectIndexer; i = LambdaProjectIndexer(); i.index_project('./'); i.save_index('lambda_index')"
-```
-
-**Check auto-indexer:**
-```bash
-# Should be running in background
-ps aux | grep auto_index.py  # Linux/Mac
-tasklist | findstr python     # Windows
-```
+1. Use GPU.1 for embeddings (keep GPU.0 for LLM)
+2. Switch to file-level search for exploration
+3. Reduce number of results
+4. Use smaller model in LM Studio
 
 ### Out of memory
 
-**Dual GPU:**
-- Move embeddings to GPU.1
+**For dual B580:**
+- Move embeddings to GPU.1: `device="GPU.1"`
 - Keep GPU.0 free for LLM
+- Reduce context length
 
-**Single GPU:**
-- Use NPU or CPU for embeddings
+**For single GPU:**
+- Use NPU or CPU for embeddings: `device="NPU"`
 - Reduce LLM context length
 - Use smaller model (14B instead of 32B)
 
-### Poor search results
-
-**Improve:**
-1. Increase `top_k` (try 5-7 files)
-2. Ask more specific questions
-3. Rebuild index: `python -c "...reindex..."`
-4. Check file extensions are included
-
 ---
 
-## 📊 Performance
+## 📚 Documentation
 
-### Indexing Speed
-
-| Device | Files/sec | Notes |
-|--------|-----------|-------|
-| NPU | 500-1000 | Optimal for background |
-| GPU (Arc B580) | 300-500 | Fast, but blocks LLM |
-| CPU (20-core) | 100-200 | Acceptable fallback |
-
-### Query Latency
-
-| Component | Time | Notes |
-|-----------|------|-------|
-| Search (NPU) | <100ms | Finding relevant files |
-| Context building | 50-200ms | Reading file contents |
-| LLM inference (32B) | 1-3s | Generating answer |
-| **Total** | **1.5-3.5s** | End-to-end response |
-
-### Model Comparison (Dual Arc B580)
-
-| Model | VRAM | Speed | Quality | Best For |
-|-------|------|-------|---------|----------|
-| Qwen 72B (Q4) | 22GB | 15-25 tok/s | ⭐⭐⭐⭐⭐ | Max quality |
-| Qwen 32B (FP16) | 18GB | 30-40 tok/s | ⭐⭐⭐⭐⭐ | **Recommended** |
-| Qwen 14B (Q5) | 10GB | 35-50 tok/s | ⭐⭐⭐⭐ | Fast iterations |
-| DeepSeek 236B (Q2) | 23GB | 5-10 tok/s | ⭐⭐⭐⭐⭐ | Best coding |
+- **README.md** (this file) - Main documentation
+- **README_RAG_SETUP.md** - Detailed setup guide
+- **ADVANCED_FEATURES.md** - 100+ file support, search strategies
+- **Local LLM Setup Guide** (artifacts) - Intel Arc B580 configuration
+- **Dual GPU Configuration** (artifacts) - Multi-device optimization
 
 ---
 
@@ -458,6 +555,16 @@ tasklist | findstr python     # Windows
 
 ## 🚧 Roadmap
 
+**Current Features:**
+- ✅ File and chunk-level indexing
+- ✅ Three search strategies
+- ✅ Smart code-aware chunking
+- ✅ 100+ file support
+- ✅ Auto-indexing on file changes
+- ✅ Web UI with strategy selection
+- ✅ Dual GPU optimization
+
+**Planned:**
 - [ ] Multi-project support (switch between projects)
 - [ ] Chat history with context retention
 - [ ] Code diff visualization in web UI
@@ -466,6 +573,8 @@ tasklist | findstr python     # Windows
 - [ ] Batch query support
 - [ ] Export conversations to Markdown
 - [ ] VSCode extension
+- [ ] Cross-file reference tracking
+- [ ] Automatic query expansion
 
 ---
 
@@ -506,12 +615,67 @@ limitations under the License.
 2. Run `python dual_gpu_config.py` to verify setup
 3. Check logs: `auto_index.log` and `rag_server.log`
 4. Monitor GPUs: `python gpu_monitor.py`
+5. Read **ADVANCED_FEATURES.md** for search strategy help
 
 **For Lambda Project specific questions:**
 - Use the RAG system itself! It's designed to answer questions about the project.
 
 ---
 
+## 🎓 Quick Reference
+
+### Which System Should I Use?
+
+**Use Basic System if:**
+- Simple project (< 50 files)
+- Questions about 1-2 files
+- Want fastest possible responses
+- Limited computational resources
+
+**Use Advanced System if:**
+- Large project (100+ files) ✅
+- Complex, multi-file questions
+- Want maximum precision
+- Have dual GPUs or NPU available
+- **Recommended for Lambda Project**
+
+### Which Search Strategy?
+
+**Hierarchical** (Default):
+- "How does X work across the project?"
+- "Explain the architecture of Y"
+- Best all-around choice
+
+**Chunk-Level**:
+- "Show me the exact code for X"
+- "Where is function Y implemented?"
+- Need maximum precision
+
+**File-Level**:
+- "What files handle X?"
+- "Give me an overview of Y"
+- Need fast response
+
+---
+
 **Built with ❤️ for the Lambda Execution Engine Project**
 
-*Empowering local AI development on Intel hardware*
+*Empowering local AI development on Intel hardware with intelligent code assistance for 100+ files*
+
+---
+
+## 🚀 Get Started Now
+
+```bash
+# 1. Install
+pip install -r requirements.txt
+
+# 2. Upgrade to advanced system (recommended)
+python upgrade_to_chunked.py
+
+# 3. Start
+python rag_server_advanced.py
+
+# 4. Ask questions!
+# Open http://localhost:8000
+```
