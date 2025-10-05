@@ -1,4 +1,4 @@
-# Lambda Project Local RAG System
+# Lambda Project Local RAG System - Python 3.12
 
 **Intelligent code assistant with semantic search and context-aware AI responses**
 
